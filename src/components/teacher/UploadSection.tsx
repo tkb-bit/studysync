@@ -127,9 +127,27 @@ export function UploadSection() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
-  const getUploadIcon = () => { /* ... no change ... */ };
-  const getUploadTitle = () => { /* ... no change ... */ };
-  const getUploadDescription = () => { /* ... no change ... */ };
+ const getUploadIcon = () => {
+  if (uploadType === 'pdf') return <FileText className="w-5 h-5 text-primary" />;
+  if (uploadType === 'image') return <ImageIcon className="w-5 h-5 text-primary" />;
+  if (uploadType === 'notice') return <Bell className="w-5 h-5 text-primary" />;
+  return null;
+};
+
+const getUploadTitle = () => {
+  if (uploadType === 'pdf') return "Upload PDF Documents";
+  if (uploadType === 'image') return "Upload Images";
+  if (uploadType === 'notice') return "Create a Notice";
+  return "";
+};
+
+const getUploadDescription = () => {
+  if (uploadType === 'pdf') return "Upload PDF study materials for your students.";
+  if (uploadType === 'image') return "Upload images (PNG, JPG, JPEG, GIF, WebP).";
+  if (uploadType === 'notice') return "Write and publish a notice for your students.";
+  return "";
+};
+
 
   return (
     <div className="space-y-6">

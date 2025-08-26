@@ -46,7 +46,7 @@ export function NoticesSection() {
   const fetchNotices = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/notices');
+const response = await fetch(`${process.env.NEXT_PUBLIC_CHROMA_DB_URL}/api/notices`);
       if (!response.ok) throw new Error("Failed to fetch notices");
       const data = await response.json();
       setNotices(data);
