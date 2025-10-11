@@ -12,6 +12,7 @@ export async function POST(request) {
 
     // Check if backend is deployed
     const backendUrl = process.env.BACKEND_URL;
+    console.log('Backend URL from env:', backendUrl);
     if (!backendUrl) {
       return NextResponse.json({ 
         error: 'Backend not deployed. Please deploy the backend server or contact administrator.' 
@@ -23,7 +24,9 @@ export async function POST(request) {
     backendFormData.append('file', file);
     backendFormData.append('category', category);
 
-    const response = await fetch(`${backendUrl}/upload-file`, {
+    const fullUrl = `${backendUrl}/upload-file`;
+    console.log('Fetching backend URL:', fullUrl);
+    const response = await fetch(fullUrl, {
       method: 'POST',
       body: backendFormData,
     });
