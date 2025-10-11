@@ -1,6 +1,7 @@
-# TODO: Fix ESLint Build Error on Vercel
+# ESLint Migration to Flat Config
 
-- [x] Update "eslint-config-next" in package.json from "14.0.0" to "^15.4.5"
-- [x] Run `npm install` to update dependencies
-- [x] Run `npm run lint` locally to verify ESLint error is resolved
-- [x] Commit changes and redeploy to Vercel to confirm build succeeds
+- [ ] Update package.json to ESLint ^9 and add @eslint/eslintrc
+- [ ] Create eslint.config.mjs with flat config
+- [ ] Remove .eslintrc.json
+- [ ] Run npm install
+- [ ] Run npm run lint to verify
