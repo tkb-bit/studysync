@@ -5,6 +5,9 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --only=production
 
+# Install missing ChromaDB dependency
+RUN npm install @chroma-core/default-embed
+
 COPY . .
 
 EXPOSE 3001
