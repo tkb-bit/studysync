@@ -80,17 +80,24 @@ export default (chroma) => async (req, res) => {
 
 
 
-      const buffer = file.buffer;
+      const buffer = file.buffer;
+    let documentText = "";
+    let fileURL = "";
 
-    let documentText = "";
+    // Infer mimetype if not provided by multer
+    if (!file.mimetype) {
+      const extension = file.originalname.split('.').pop()?.toLowerCase();
+      if (extension === 'pdf') {
+        file.mimetype = 'application/pdf';
+      } else if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(extension)) {
+        file.mimetype = `image/${extension}`;
+      } else {
+        file.mimetype = 'application/octet-stream';
+      }
+    }
 
-    let fileURL = "";
-
-
-
-    // Step 1: Upload the file to Cloudinary for storage to get a reliable URL
-
-    const resourceType = file.type.startsWith("image/") ? "image" : "raw";
+    // Step 1: Upload the file to Cloudinary for storage to get a reliable URL
+    const resourceType = file.mimetype.startsWith("image/") ? "image" : "raw";
 
     const uploadOptions = {
 
@@ -122,13 +129,13 @@ export default (chroma) => async (req, res) => {
 
     // Step 2: Extract text from the file for the AI
 
-    if (file.type === "application/pdf") {
+    if (file.mimetype === "application/pdf") {
 
       const extractedData = await pdf(buffer);
 
       documentText = extractedData.text;
 
-    } else if (file.type.startsWith("image/")) {
+    } else if (file.mimetype.startsWith("image/")) {
 
       console.log("Extracting text from image using Cloudflare AI Vision...");
 
