@@ -10,8 +10,15 @@ export async function POST(request) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
+    // Check if backend is deployed
+    const backendUrl = process.env.BACKEND_URL;
+    if (!backendUrl) {
+      return NextResponse.json({ 
+        error: 'Backend not deployed. Please deploy the backend server or contact administrator.' 
+      }, { status: 503 });
+    }
+
     // Forward to backend
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
     const backendFormData = new FormData();
     backendFormData.append('file', file);
     backendFormData.append('category', category);
@@ -30,6 +37,6 @@ export async function POST(request) {
     return NextResponse.json(result);
   } catch (error) {
     console.error('Upload proxy error:', error);
-    return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+    return NextResponse.json({ error: 'Upload failed - backend connection issue' }, { status: 500 });
   }
 }
