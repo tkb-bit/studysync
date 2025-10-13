@@ -9,16 +9,14 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { 
-  Upload, 
+  UploadCloud, 
   FileText, 
-  Image, 
-  Bell, 
+  Image as ImageIcon, 
+  MessageSquare, 
   X, 
   CheckCircle,
   AlertCircle,
-  File,
-  ImageIcon,
-  MessageSquare
+  Loader2 // A better loading spinner icon
 } from 'lucide-react'
 
 type UploadType = 'pdf' | 'image' | 'notice'
@@ -40,6 +38,7 @@ export function UploadSection() {
   const [category, setCategory] = useState('general')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // No changes needed for the onDrop and handlePublishNotice logic
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const newFiles: UploadedFile[] = acceptedFiles.map((file) => ({
       id: `${file.name}-${file.lastModified}`,
@@ -90,12 +89,10 @@ export function UploadSection() {
     }
     setIsSubmitting(true);
     try {
-      // ================== THE FINAL, CORRECT URL ==================
       const response = await fetch('/api/notices', {
-      // ==========================================================
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: noticeTitle, content: noticeContent, category, status: 'published' }), // Send as 'published' directly
+        body: JSON.stringify({ title: noticeTitle, content: noticeContent, category, status: 'published' }),
       });
       if (!response.ok) { throw new Error('Failed to publish notice'); }
       alert('Notice published successfully!');
@@ -130,94 +127,100 @@ export function UploadSection() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
- const getUploadIcon = () => {
-  if (uploadType === 'pdf') return <FileText className="w-5 h-5 text-primary" />;
-  if (uploadType === 'image') return <ImageIcon className="w-5 h-5 text-primary" />;
-  if (uploadType === 'notice') return <Bell className="w-5 h-5 text-primary" />;
-  return null;
-};
-
-const getUploadTitle = () => {
-  if (uploadType === 'pdf') return "Upload PDF Documents";
-  if (uploadType === 'image') return "Upload Images";
-  if (uploadType === 'notice') return "Create a Notice";
-  return "";
-};
-
-const getUploadDescription = () => {
-  if (uploadType === 'pdf') return "Upload PDF study materials for your students.";
-  if (uploadType === 'image') return "Upload images (PNG, JPG, JPEG, GIF, WebP).";
-  if (uploadType === 'notice') return "Write and publish a notice for your students.";
-  return "";
-};
-
+  // Helper for better file type icon styling
+  const getFileIconStyle = (type: string) => {
+    if (type.includes('pdf')) {
+      return { Icon: FileText, className: "bg-blue-100 text-[#2a358c]" };
+    }
+    return { Icon: ImageIcon, className: "bg-purple-100 text-purple-600" };
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-8 bg-slate-50 p-6 sm:p-8 rounded-lg">
+      {/* Enhanced Header */}
       <div>
-        <h1 className="text-3xl font-bold text-primary">Upload Content</h1>
-        <p className="text-muted-foreground">Upload PDFs, images, and create notices for your students</p>
+        <h1 className="text-3xl font-bold text-[#2a358c]">Content Uploader</h1>
+        <p className="text-gray-500 mt-1">Upload materials, images, or create notices for your portal.</p>
       </div>
 
-      {/* Upload Type Selector */}
-      <Card className="border-0 shadow-sm">
+      {/* Enhanced Upload Type Selector */}
+      <Card className="bg-white rounded-xl shadow-md">
         <CardHeader>
-          <CardTitle>Select Upload Type</CardTitle>
-          <CardDescription>Choose what type of content you want to upload</CardDescription>
+          <CardTitle className="text-xl text-[#2a358c]">1. Select Content Type</CardTitle>
+          <CardDescription>Choose what you want to add to the portal.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button variant={uploadType === 'pdf' ? 'default' : 'outline'} className="h-20 flex flex-col items-center justify-center space-y-2" onClick={() => setUploadType('pdf')}><FileText className="w-6 h-6" /><span>PDF Documents</span></Button>
-            <Button variant={uploadType === 'image' ? 'default' : 'outline'} className="h-20 flex flex-col items-center justify-center space-y-2" onClick={() => setUploadType('image')}><ImageIcon className="w-6 h-6" /><span>Images</span></Button>
-            <Button variant={uploadType === 'notice' ? 'default' : 'outline'} className="h-20 flex flex-col items-center justify-center space-y-2" onClick={() => setUploadType('notice')}><MessageSquare className="w-6 h-6" /><span>Notices</span></Button>
+            {[
+              { type: 'pdf', icon: FileText, label: 'PDF Document' },
+              { type: 'image', icon: ImageIcon, label: 'Image File' },
+              { type: 'notice', icon: MessageSquare, label: 'Notice' }
+            ].map(item => (
+              <button
+                key={item.type}
+                onClick={() => setUploadType(item.type as UploadType)}
+                className={`p-6 rounded-lg border-2 transition-all flex flex-col items-center justify-center space-y-3 ${
+                  uploadType === item.type 
+                    ? 'border-[#2a358c] bg-blue-50/50 shadow-inner' 
+                    : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-slate-50'
+                }`}
+              >
+                <item.icon className={`w-8 h-8 ${uploadType === item.type ? 'text-[#2a358c]' : 'text-gray-400'}`} />
+                <span className={`font-semibold ${uploadType === item.type ? 'text-[#2a358c]' : 'text-gray-600'}`}>{item.label}</span>
+              </button>
+            ))}
           </div>
         </CardContent>
       </Card>
 
-      {/* Upload Area */}
-      <Card className="border-0 shadow-sm">
+      {/* Main Upload/Create Area */}
+      <Card className="bg-white rounded-xl shadow-md">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">{getUploadIcon()}<span>{getUploadTitle()}</span></CardTitle>
-          <CardDescription>{getUploadDescription()}</CardDescription>
+          <CardTitle className="text-xl text-[#2a358c]">2. Add Details & Upload</CardTitle>
+          <CardDescription>
+            { uploadType === 'pdf' && "Upload PDF study materials for your students." }
+            { uploadType === 'image' && "Upload relevant images (PNG, JPG, WebP)." }
+            { uploadType === 'notice' && "Write and publish an announcement." }
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {uploadType === 'notice' ? (
-            // Notice Creation Form
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="notice-title">Notice Title</Label>
-                <Input id="notice-title" placeholder="Enter notice title..." value={noticeTitle} onChange={(e) => setNoticeTitle(e.target.value)} />
+            // Enhanced Notice Creation Form
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="notice-title" className="font-semibold text-gray-700">Notice Title</Label>
+                  <Input id="notice-title" placeholder="e.g., Mid-Term Exam Schedule" value={noticeTitle} onChange={(e) => setNoticeTitle(e.target.value)} className="mt-2" />
+                </div>
+                <div>
+                  <Label htmlFor="category" className="font-semibold text-gray-700">Category</Label>
+                  <Select value={category} onValueChange={setCategory}>
+                    <SelectTrigger className="mt-2"><SelectValue placeholder="Select category" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="general">General</SelectItem>
+                      <SelectItem value="exam">Exam</SelectItem>
+                      <SelectItem value="assignment">Assignment</SelectItem>
+                      <SelectItem value="event">Event</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div>
-                <Label htmlFor="category">Category</Label>
-                <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="general">General</SelectItem>
-                    <SelectItem value="exam">Exam</SelectItem>
-                    <SelectItem value="assignment">Assignment</SelectItem>
-                    <SelectItem value="event">Event</SelectItem>
-                    <SelectItem value="reminder">Reminder</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="notice-content" className="font-semibold text-gray-700">Notice Content</Label>
+                <Textarea id="notice-content" placeholder="Enter the full details of the notice here..." rows={6} value={noticeContent} onChange={(e) => setNoticeContent(e.target.value)} className="mt-2" />
               </div>
-              <div>
-                <Label htmlFor="notice-content">Notice Content</Label>
-                <Textarea id="notice-content" placeholder="Enter notice content..." rows={6} value={noticeContent} onChange={(e) => setNoticeContent(e.target.value)} />
-              </div>
-              <Button onClick={handlePublishNotice} disabled={isSubmitting} className="w-full">
-                <Bell className="w-4 h-4 mr-2" />
+              <Button onClick={handlePublishNotice} disabled={isSubmitting} size="lg" className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold shadow-md">
+                {isSubmitting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <MessageSquare className="w-5 h-5 mr-2" />}
                 {isSubmitting ? 'Publishing...' : 'Publish Notice'}
               </Button>
             </div>
           ) : (
-            // File Upload Area
-            <div className="space-y-4">
+            // Enhanced File Upload Area
+            <div className="space-y-6">
               <div>
-                <Label htmlFor="file-category">Category</Label>
+                <Label htmlFor="file-category" className="font-semibold text-gray-700">Category</Label>
                 <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger id="file-category"><SelectValue placeholder="Select a category" /></SelectTrigger>
+                  <SelectTrigger id="file-category" className="mt-2"><SelectValue placeholder="Select a category" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="general">General</SelectItem>
                     <SelectItem value="timetable">Timetable</SelectItem>
@@ -226,18 +229,17 @@ const getUploadDescription = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div {...getRootProps()} className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${ isDragActive ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-primary hover:bg-gray-50' }`}>
+              <div {...getRootProps()} className={`relative border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all ${ isDragActive ? 'border-[#2a358c] bg-blue-50' : 'border-gray-300 bg-slate-50/50 hover:border-gray-400' }`}>
                 <input {...getInputProps()} />
-                <div className="space-y-4">
-                  {getUploadIcon()}
+                <div className="flex flex-col items-center justify-center space-y-4 text-gray-500">
+                  <UploadCloud className={`w-12 h-12 transition-colors ${isDragActive ? 'text-[#2a358c]' : 'text-gray-400'}`} />
                   <div>
-                    <h3 className="text-lg font-medium text-primary">{isDragActive ? 'Drop files here' : 'Drag & drop files here'}</h3>
-                    <p className="text-muted-foreground">or click to select files</p>
+                    <p className="font-semibold text-lg text-[#2a358c]">{isDragActive ? 'Drop files here!' : 'Drag & drop files here'}</p>
+                    <p className="text-gray-500">or click to browse your computer</p>
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    {uploadType === 'pdf' && 'Supports: PDF files (max 10MB each)'}
-                    {uploadType === 'image' && 'Supports: PNG, JPG, JPEG, GIF, WebP (max 5MB each)'}
-                  </div>
+                  <p className="text-xs text-gray-400">
+                    {uploadType === 'pdf' ? 'PDF files up to 10MB' : 'Images up to 5MB'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -245,31 +247,37 @@ const getUploadDescription = () => {
         </CardContent>
       </Card>
 
-      {/* Uploaded Files List */}
+      {/* Enhanced Uploaded Files List */}
       {uploadedFiles.length > 0 && (
-        <Card className="border-0 shadow-sm">
-          <CardHeader><CardTitle>Uploaded Files</CardTitle><CardDescription>Manage your uploaded content</CardDescription></CardHeader>
+        <Card className="bg-white rounded-xl shadow-md">
+          <CardHeader>
+            <CardTitle className="text-xl text-[#2a358c]">Upload Progress</CardTitle>
+            <CardDescription>Manage your uploaded content below.</CardDescription>
+          </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {uploadedFiles.map((file) => (
-                <div key={file.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                      {file.type.includes('pdf') ? <FileText className="w-5 h-5 text-primary" /> : <ImageIcon className="w-5 h-5 text-primary" />}
+            <div className="space-y-4">
+              {uploadedFiles.map((file) => {
+                const { Icon, className } = getFileIconStyle(file.type);
+                return (
+                  <div key={file.id} className="flex items-center space-x-4 p-4 border rounded-lg bg-slate-50/50">
+                    <div className={`flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center ${className}`}>
+                      <Icon className="w-6 h-6" />
                     </div>
-                    <div>
-                      <p className="font-medium text-primary truncate max-w-xs">{file.name}</p>
-                      <p className="text-sm text-muted-foreground">{formatFileSize(file.size)}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-800 truncate">{file.name}</p>
+                      <p className="text-sm text-gray-500">{formatFileSize(file.size)}</p>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      {file.status === 'uploading' && <span className="flex items-center text-sm font-medium text-yellow-600 bg-yellow-100 px-3 py-1 rounded-full"><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading</span>}
+                      {file.status === 'success' && <span className="flex items-center text-sm font-medium text-green-700 bg-green-100 px-3 py-1 rounded-full"><CheckCircle className="w-4 h-4 mr-2" />Success</span>}
+                      {file.status === 'error' && <span className="flex items-center text-sm font-medium text-red-700 bg-red-100 px-3 py-1 rounded-full" title={file.errorMessage}><AlertCircle className="w-4 h-4 mr-2" />Error</span>}
+                      <Button variant="ghost" size="icon" className="text-gray-400 hover:bg-red-100 hover:text-red-600" onClick={() => removeFile(file.id)}>
+                        <X className="w-5 h-5" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    {file.status === 'uploading' && (<div className="flex items-center space-x-1 text-yellow-600"><div className="w-4 h-4 border-2 border-yellow-600 border-t-transparent rounded-full animate-spin" /><span className="text-sm">Uploading...</span></div>)}
-                    {file.status === 'success' && (<div className="flex items-center space-x-1 text-green-600"><CheckCircle className="w-4 h-4" /><span className="text-sm">Uploaded</span></div>)}
-                    {file.status === 'error' && (<div className="flex items-center space-x-1 text-red-600" title={file.errorMessage}><AlertCircle className="w-4 h-4" /><span className="text-sm">Error</span></div>)}
-                    <Button variant="ghost" size="sm" onClick={() => removeFile(file.id)}><X className="w-4 h-4" /></Button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </CardContent>
         </Card>

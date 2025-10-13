@@ -7,7 +7,7 @@ import { UploadSection } from './UploadSection'
 import { MaterialsSection } from './MaterialsSection'
 import { NoticesSection } from './NoticesSection'
 import { StudentsSection } from './StudentsSection'
-import { SettingsSection } from './SettingsSection'
+// If SettingsSection is a default export, use:
 
 type DashboardSection = 'overview' | 'upload' | 'materials' | 'notices' | 'students' | 'settings'
 
@@ -26,24 +26,25 @@ export function TeacherDashboard() {
         return <NoticesSection />
       case 'students':
         return <StudentsSection />
-      case 'settings':
-        return <SettingsSection />
+      
       default:
         return <DashboardOverview />
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    // Enhanced background and layout
+    <div className="min-h-screen bg-slate-50">
       <div className="flex">
         <TeacherSidebar 
           activeSection={activeSection} 
           onSectionChange={setActiveSection} 
         />
-        <main className="flex-1 p-6">
+        {/* Enhanced main content area with better padding */}
+        <main className="flex-1 p-6 sm:p-8">
           {renderSection()}
         </main>
       </div>
     </div>
   )
-} 
+}

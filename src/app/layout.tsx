@@ -2,6 +2,7 @@ import './globals.css'
 import { ReactNode } from 'react'
 import { Inter } from 'next/font/google'
 import Script from 'next/script'
+import AuthProvider from '../components/AuthProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -44,8 +45,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           }}
         />
       </head>
-      <body className={inter.className} suppressHydrationWarning={true}>
-        {children}
+       <body className={inter.className} suppressHydrationWarning={true}>
+        {/* 2. Wrap the children with AuthProvider */}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   )

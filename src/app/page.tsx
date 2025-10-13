@@ -1,155 +1,218 @@
+"use client";
+
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { BookOpen, Upload, Bell, Users, Brain, Shield } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { BookOpen, Upload, Bell, Users, Brain, Shield, ArrowRight } from 'lucide-react'
+import { HydrationHandler } from '@/components/HydrationHandler'
+import Image from 'next/image'
+import { motion } from 'framer-motion' 
+
+// RCPIT Logo Component
+const RcpitLogo = () => (
+ <Image
+    src="/assets/images/rcpit-logo.png"
+    alt="RCPIT Logo"
+    width={70}
+    height={70}
+    className="rounded-full"
+  />
+);
 
 export default function HomePage() {
+  const fadeInUp = {
+    initial: { opacity: 0, y: 30 },
+    animate: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeInOut" } },
+  } as const; 
+
+  const staggerContainer = {
+    animate: {
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <Brain className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <h1 className="text-xl font-bold text-primary">StudySync AI</h1>
-          </div>
-          <nav className="flex items-center space-x-6">
-            <Link href="/teacher" className="text-muted-foreground hover:text-primary transition-colors">
-              Teacher Portal
+    <HydrationHandler>
+      <div className="min-h-screen bg-slate-50 text-gray-800 font-sans">
+        {/* Header */}
+        <header className="sticky top-0 z-50 bg-yellow-50/90 backdrop-blur-lg border-b border-yellow-200/80 shadow-sm">
+          <div className="container mx-auto px-6 py-3 flex items-center justify-between">
+            <Link href="/" className="flex items-center space-x-3">
+              <RcpitLogo />
+              <div className="flex flex-col">
+                <span className="text-xl font-bold text-[#2a358c]">StudySync AI</span>
+              </div>
             </Link>
-            <Button asChild>
-              <Link href="/teacher">Get Started</Link>
-            </Button>
-          </nav>
-        </div>
-      </header>
-
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-16">
-        <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-6xl font-bold text-primary mb-6">
-            AI-Powered Academic Assistant
-          </h1>
-          <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-            Streamline your teaching workflow with intelligent document management, 
-            automated content organization, and seamless student communication.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" asChild>
-              <Link href="/teacher">Access Teacher Portal</Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link href="/teacher">Learn More</Link>
+            <nav className="hidden md:flex items-center space-x-8">
+              <Link href="#features" className="text-gray-700 hover:text-[#2a358c] transition-colors font-medium">
+                Features
+              </Link>
+              <Link href="#cta" className="text-gray-700 hover:text-[#2a358c] transition-colors font-medium">
+                Get Started
+              </Link>
+              <Link href="/teacher" className="text-gray-700 hover:text-[#2a358c] transition-colors font-medium">
+                Teacher Portal
+              </Link>
+            </nav>
+            <Button asChild className="bg-[#2a358c] hover:bg-[#3a4a9f] text-white font-semibold shadow-md transition-transform hover:scale-105">
+              <Link href="/teacher">Access Portal</Link>
             </Button>
           </div>
-        </div>
-      </section>
+        </header>
 
-      {/* Features Section */}
-      <section className="container mx-auto px-4 py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-primary mb-4">Why Choose StudySync AI?</h2>
-          <p className="text-muted-foreground text-lg">Professional tools designed for modern educators</p>
-        </div>
-        
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="border-0 shadow-lg bg-white">
-            <CardHeader>
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                <Upload className="w-6 h-6 text-primary" />
+        <main>
+          {/* Hero Section */}
+          <section className="relative bg-white overflow-hidden">
+            <div className="container mx-auto px-6 py-24 md:py-32 grid md:grid-cols-2 items-center gap-12">
+              <motion.div 
+                className="text-center md:text-left"
+                initial="initial"
+                animate="animate"
+                variants={staggerContainer}
+              >
+                <motion.h1 
+                  className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-[#2a358c] mb-6 leading-tight"
+                  variants={fadeInUp}
+                >
+                  AI-Powered Academic Assistant
+                </motion.h1>
+                <motion.p 
+                  className="text-lg text-gray-600 mb-10 leading-relaxed max-w-xl mx-auto md:mx-0"
+                  variants={fadeInUp}
+                >
+                  Streamline your teaching workflow with intelligent document management, 
+                  automated content organization, and seamless student communication.
+                </motion.p>
+                <motion.div 
+                  className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start"
+                  variants={fadeInUp}
+                >
+                  <Button size="lg" asChild className="bg-[#2a358c] hover:bg-[#3a4a9f] text-white font-bold shadow-lg transition-transform hover:scale-105 transform">
+                    <Link href="/teacher">
+                      Access Teacher Portal <ArrowRight className="w-5 h-5 ml-2" />
+                    </Link>
+                  </Button>
+                  <Button size="lg" variant="outline" asChild className="border-[#2a358c] text-[#2a358c] hover:bg-[#2a358c]/10 font-bold">
+                    <Link href="#features">Learn More</Link>
+                  </Button>
+                </motion.div>
+              </motion.div>
+              
+              {/* === CHANGE: Image replaced with animated Brain icon === */}
+              <div className="hidden md:flex items-center justify-center p-8">
+                <motion.div
+                  animate={{
+                    scale: [1, 1.05, 1],
+                    opacity: [0.8, 1, 0.8],
+                  }}
+                  transition={{
+                    duration: 4,
+                    ease: "easeInOut",
+                    repeat: Infinity,
+                    repeatType: 'reverse'
+                  }}
+                >
+                  <Brain className="w-64 h-64 text-[#2a358c]/20" strokeWidth={1}/>
+                </motion.div>
               </div>
-              <CardTitle>Smart Document Upload</CardTitle>
-              <CardDescription>
-                Upload PDFs, images, and notices with intelligent categorization and organization
-              </CardDescription>
-            </CardHeader>
-          </Card>
+              {/* === END CHANGE === */}
 
-          <Card className="border-0 shadow-lg bg-white">
-            <CardHeader>
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                <Brain className="w-6 h-6 text-primary" />
+            </div>
+          </section>
+
+          {/* Features Section */}
+          <section id="features" className="container mx-auto px-6 py-24">
+            <motion.div 
+              className="text-center mb-16"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              <h2 className="text-4xl font-bold text-[#2a358c] mb-4">Why Choose StudySync AI?</h2>
+              <p className="text-gray-600 text-lg max-w-3xl mx-auto">Professional tools designed for modern educators to enhance efficiency and engagement.</p>
+              <div className="mt-4 h-1.5 w-24 bg-[#2a358c] mx-auto rounded-full"></div>
+            </motion.div>
+            
+            <motion.div 
+              className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+              initial="initial"
+              whileInView="animate"
+              viewport={{ once: true }}
+              variants={staggerContainer}
+            >
+              {[
+                { icon: Upload, title: "Smart Document Upload", desc: "Upload PDFs, images, and notices with intelligent categorization and organization." },
+                { icon: Brain, title: "AI-Powered Organization", desc: "Automatic content tagging, search optimization, and smart recommendations." },
+                { icon: Bell, title: "Smart Notifications", desc: "Automated alerts for important deadlines, student submissions, and updates." },
+                { icon: Users, title: "Student Management", desc: "Track student progress, manage assignments, and facilitate communication." },
+                { icon: BookOpen, title: "Content Library", desc: "Build a comprehensive library of educational resources and materials." },
+                { icon: Shield, title: "Secure & Private", desc: "Enterprise-grade security with data encryption and privacy protection." },
+              ].map((feature, i) => (
+                <motion.div key={i} variants={fadeInUp}>
+                  <Card className="bg-white rounded-xl shadow-md hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 h-full group overflow-hidden">
+                    <CardHeader>
+                      <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-full flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110">
+                        <feature.icon className="w-8 h-8 text-[#2a358c]" />
+                      </div>
+                      <CardTitle className="text-xl text-[#2a358c]">{feature.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription className="text-base text-gray-600 leading-relaxed">
+                        {feature.desc}
+                      </CardDescription>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+          </section>
+
+          {/* CTA Section */}
+          <section id="cta" className="bg-gradient-to-r from-[#2a358c] to-[#3a4a9f] text-white">
+            <div className="container mx-auto px-6 py-20 text-center">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <h2 className="text-4xl font-bold mb-4">Ready to Transform Your Teaching?</h2>
+                <p className="text-lg mb-8 opacity-90 max-w-3xl mx-auto leading-relaxed">
+                  Join thousands of educators who are using StudySync AI to enhance their teaching experience and create more impactful learning environments.
+                </p>
+                <Button size="lg" variant="secondary" asChild className="bg-white text-[#2a358c] hover:bg-gray-200 text-lg font-semibold py-4 px-8 rounded-full shadow-lg transform transition-transform hover:scale-105">
+                  <Link href="/teacher">Start Your Free Trial Today</Link>
+                </Button>
+              </motion.div>
+            </div>
+          </section>
+        </main>
+
+        {/* Improved Footer */}
+        <footer className="bg-gray-900 text-gray-400 border-t-4 border-[#2a358c]">
+          <div className="container mx-auto px-6 py-10">
+            <div className="flex flex-col md:flex-row justify-between items-center text-center md:text-left">
+              <div>
+                <Link href="/" className="flex items-center justify-center md:justify-start space-x-3 mb-4 md:mb-0">
+                  <RcpitLogo />
+                  <span className="text-xl font-bold text-white">StudySync AI</span>
+                </Link>
               </div>
-              <CardTitle>AI-Powered Organization</CardTitle>
-              <CardDescription>
-                Automatic content tagging, search optimization, and smart recommendations
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-white">
-            <CardHeader>
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                <Bell className="w-6 h-6 text-primary" />
+              <div className="flex space-x-6 my-4 md:my-0">
+                 <Link href="#features" className="hover:text-white transition-colors">Features</Link>
+                 <Link href="#cta" className="hover:text-white transition-colors">Get Started</Link>
+                 <Link href="/teacher" className="hover:text-white transition-colors">Teacher Portal</Link>
               </div>
-              <CardTitle>Smart Notifications</CardTitle>
-              <CardDescription>
-                Automated alerts for important deadlines, student submissions, and updates
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-white">
-            <CardHeader>
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                <Users className="w-6 h-6 text-primary" />
-              </div>
-              <CardTitle>Student Management</CardTitle>
-              <CardDescription>
-                Track student progress, manage assignments, and facilitate communication
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-white">
-            <CardHeader>
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                <BookOpen className="w-6 h-6 text-primary" />
-              </div>
-              <CardTitle>Content Library</CardTitle>
-              <CardDescription>
-                Build a comprehensive library of educational resources and materials
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-white">
-            <CardHeader>
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                <Shield className="w-6 h-6 text-primary" />
-              </div>
-              <CardTitle>Secure & Private</CardTitle>
-              <CardDescription>
-                Enterprise-grade security with data encryption and privacy protection
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="bg-primary text-primary-foreground py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Teaching?</h2>
-          <p className="text-lg mb-8 opacity-90">
-            Join thousands of educators who are already using StudySync AI to enhance their teaching experience.
-          </p>
-          <Button size="lg" variant="secondary" asChild>
-            <Link href="/teacher">Start Your Free Trial</Link>
-          </Button>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-white border-t py-8">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-muted-foreground">
-            © 2024 StudySync AI. All rights reserved.
-          </p>
-        </div>
-      </footer>
-    </div>
+               <p className="text-sm">
+                 © {new Date().getFullYear()} StudySync AI. All rights reserved.
+               </p>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </HydrationHandler>
   )
 }
