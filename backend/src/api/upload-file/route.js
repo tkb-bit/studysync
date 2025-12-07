@@ -3,7 +3,6 @@
 import clientPromise from "../../lib/mongodb.js";
 
 import pdf from "pdf-extraction";
-
 import { v2 as cloudinary } from 'cloudinary';
 
 // Configure Cloudinary from .env - ONLY for storage
@@ -62,21 +61,22 @@ async function runCloudflareAIJson(model, inputs) {
 
 export default (chroma) => async (req, res) => {
 
-  if (req.method === 'POST') {
+  if (req.method === 'POST') {
 
-    try {
+    try {
 
-      const file = req.file;
+      const file = req.file;
 
-      const category = req.body.category || "general";
+      const category = req.body.category || "general";
+      const warnings = [];
 
 
 
-      if (!file) {
+      if (!file) {
 
-        return res.status(400).json({ error: "No file provided" });
+        return res.status(400).json({ error: "No file provided" });
 
-      }
+      }
 
 
 
@@ -96,87 +96,115 @@ export default (chroma) => async (req, res) => {
       }
     }
 
-    // Step 1: Upload the file to Cloudinary for storage to get a reliable URL
-    const resourceType = file.mimetype.startsWith("image/") ? "image" : "raw";
+    // Step 1: Upload the file to Cloudinary for storage to get a reliable URL (skip gracefully if creds missing)
+    const hasCloudinaryCreds = process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET;
+    if (hasCloudinaryCreds) {
+      try {
+        const resourceType = file.mimetype.startsWith("image/") ? "image" : "raw";
 
-    const uploadOptions = {
+        const uploadOptions = {
 
-      resource_type: resourceType,
+          resource_type: resourceType,
 
-      folder: "studysync_materials",
+          folder: "studysync_materials",
 
-      use_filename: true,
+          use_filename: true,
 
-      unique_filename: false,
+          unique_filename: false,
 
-    };
+        };
 
-    const uploadResult = await new Promise((resolve, reject) => {
+        const uploadResult = await new Promise((resolve, reject) => {
 
-      cloudinary.uploader.upload_stream(uploadOptions, (error, result) => {
+          cloudinary.uploader.upload_stream(uploadOptions, (error, result) => {
 
-        if (error) return reject(error); resolve(result);
+            if (error) return reject(error); resolve(result);
 
-      }).end(buffer);
+          }).end(buffer);
 
-    });
+        });
 
-    fileURL = uploadResult.secure_url;
+        fileURL = uploadResult.secure_url;
 
-    console.log("File successfully stored in Cloudinary at:", fileURL);
-
-
-
-    // Step 2: Extract text from the file for the AI
-
-    if (file.mimetype === "application/pdf") {
-
-      const extractedData = await pdf(buffer);
-
-      documentText = extractedData.text;
-
-    } else if (file.mimetype.startsWith("image/")) {
-
-      console.log("Extracting text from image using Cloudflare AI Vision...");
-
-     
-
-      // ================== FINAL OCR FIX: USING CLOUDFLARE AI ==================
-
-      // This method is confirmed to be on the free tier and works reliably.
-
-      const imageBase64 = buffer.toString('base64');
-
-      const extractionPrompt = `This is an image of a document. Perform OCR and extract all text from this image. Be as precise as possible.`;
-
-     
-
-      const visionResponse = await runCloudflareAIJson('@cf/llava-hf/llava-1.5-7b-hf', { prompt: extractionPrompt, image: imageBase64 });
-
-     
-
-      documentText = visionResponse.result.response;
-
-      console.log("Successfully extracted text with Cloudflare AI:", documentText);
-
-      // =====================================================================
-
-    }
+        console.log("File successfully stored in Cloudinary at:", fileURL);
+      } catch (cloudErr) {
+        warnings.push(`Cloudinary upload skipped: ${cloudErr.message}`);
+      }
+    } else {
+      warnings.push('Cloudinary credentials missing; stored file in-memory only.');
+    }
 
 
 
-    // Step 3: Save metadata to MongoDB
-    await clientPromise.then(client => client.db(process.env.DB_NAME).collection("materials").insertOne({
-        fileName: file.originalname, fileURL, contentType: file.mimetype, size: file.size, uploadDate: new Date(), category, aiDescription: documentText
-    }));
+    // Step 2: Extract text from the file for the AI
 
-    console.log("Successfully saved metadata to MongoDB.");
+    if (file.mimetype === "application/pdf") {
+      try {
+        const extractedData = await pdf(buffer);
+
+        documentText = extractedData.text;
+
+        if (!documentText?.trim()) {
+          ingestWarning = 'No text detected in PDF (possibly image-only); skipping vector storage';
+        }
+      } catch (pdfErr) {
+        warnings.push(`PDF text extraction failed: ${pdfErr.message}`);
+        ingestWarning = 'PDF looks image-only or unreadable; skipping vector storage';
+        documentText = '';
+      }
+
+    } else if (file.mimetype.startsWith("image/")) {
+
+      console.log("Extracting text from image using Cloudflare AI Vision...");
+     
+
+      // ================== FINAL OCR FIX: USING CLOUDFLARE AI ==================
+
+      // This method is confirmed to be on the free tier and works reliably.
+
+      const imageBase64 = buffer.toString('base64');
+
+      const extractionPrompt = `This is an image of a document. Perform OCR and extract all text from this image. Be as precise as possible.`;
+     
+      try {
+        const visionResponse = await runCloudflareAIJson('@cf/llava-hf/llava-1.5-7b-hf', { prompt: extractionPrompt, image: imageBase64 });
+     
+        documentText = visionResponse.result.response;
+
+        console.log("Successfully extracted text with Cloudflare AI:", documentText);
+      } catch (visionErr) {
+        warnings.push(`Image OCR skipped: ${visionErr.message}`);
+      }
+
+      // =====================================================================
+
+    }
+
+
+
+    // Step 3: Save metadata to MongoDB (skip gracefully if env missing)
+    const mongoUri = process.env.MONGODB_URI;
+    const dbName = process.env.DB_NAME || process.env.MONGODB_DB || 'studysync';
+    if (mongoUri) {
+      try {
+        await clientPromise.then(client => client.db(dbName).collection("materials").insertOne({
+            fileName: file.originalname, fileURL, contentType: file.mimetype, size: file.size, uploadDate: new Date(), category, aiDescription: documentText
+        }));
+
+        console.log("Successfully saved metadata to MongoDB.");
+      } catch (mongoErr) {
+        warnings.push(`Mongo save skipped: ${mongoErr.message}`);
+      }
+    } else {
+      warnings.push('MONGODB_URI missing; metadata not persisted.');
+    }
 
 
 
     // Step 4: Save extracted text to Pinecone for searching
-
-    if (documentText) {
+    let ingested = false;
+    let ingestWarning = null;
+    if (documentText?.trim()) {
 
       const pineconeApiKey = process.env.PINECONE_API_KEY;
 
@@ -184,42 +212,74 @@ export default (chroma) => async (req, res) => {
 
       if (!pineconeApiKey || !pineconeIndexName) {
 
-        console.warn('PINECONE_API_KEY or PINECONE_INDEX_NAME not set, skipping vector storage');
+        ingestWarning = 'PINECONE_API_KEY or PINECONE_INDEX_NAME not set, skipping vector storage';
 
       } else {
+        try {
 
-        const { Pinecone } = await import('@pinecone-database/pinecone');
+          const { Pinecone } = await import('@pinecone-database/pinecone');
 
-        const pinecone = new Pinecone({ apiKey: pineconeApiKey });
+          const pinecone = new Pinecone({ apiKey: pineconeApiKey });
 
-        const index = pinecone.Index(pineconeIndexName);
+          const index = pinecone.Index(pineconeIndexName);
 
-        const chunks = documentText.split("\n").filter(chunk => chunk.trim() !== ""); // Split by line for OCR text
+          const chunks = documentText.split("\n").filter(chunk => chunk.trim() !== ""); // Split by line for OCR text
 
-        if (chunks.length > 0) {
+          if (chunks.length > 0) {
 
-          const embeddingResponse = await runCloudflareAIJson('@cf/baai/bge-base-en-v1.5', { text: chunks });
+            const embeddingResponse = await runCloudflareAIJson('@cf/baai/bge-base-en-v1.5', { text: chunks, input: chunks });
 
-          const embeddings = embeddingResponse.result.data.map(d => d.embedding);
+            console.log('Embedding response sample:', JSON.stringify(embeddingResponse?.result?.data?.[0] || embeddingResponse?.result || embeddingResponse).slice(0, 200));
 
-          const ids = chunks.map((_, i) => `${file.originalname}-${Date.now() + i}`);
+            const rawEmbeddings = (embeddingResponse.result?.data || []).map(d => {
+              if (Array.isArray(d)) return d;
+              return d.data || d.embedding || d.values || [];
+            });
 
-          const metadatas = chunks.map(chunk => ({ source: file.originalname, fileURL, category: category, text: chunk }));
+            const targetDim = Number(process.env.PINECONE_DIM) || 1024;
 
-          const vectors = chunks.map((chunk, i) => ({
+            const normalizeEmbedding = (vec) => {
+              if (!Array.isArray(vec)) return null;
+              if (vec.length === targetDim) return vec;
+              if (vec.length > targetDim) return vec.slice(0, targetDim);
+              return vec.concat(Array(targetDim - vec.length).fill(0));
+            };
 
-            id: ids[i],
+            const embeddings = rawEmbeddings.map(normalizeEmbedding).filter(Boolean);
 
-            values: embeddings[i],
+            // Drop any chunks where we did not get an embedding back
+            if (embeddings.some(e => !e || e.length === 0)) {
+              ingestWarning = 'Embedding service returned empty vectors; skipped those chunks';
+            }
 
-            metadata: metadatas[i]
+            const ids = chunks.map((_, i) => `${file.originalname}-${Date.now() + i}`);
 
-          }));
+            const metadatas = chunks.map(chunk => ({ source: file.originalname, fileURL, category: category, text: chunk }));
 
-          await index.upsert({ vectors });
+            const paired = chunks.map((chunk, i) => ({
+              id: ids[i],
+              embedding: embeddings[i],
+              metadata: metadatas[i]
+            })).filter(p => Array.isArray(p.embedding) && p.embedding.length > 0);
 
-          console.log("Successfully saved text chunks to Pinecone.");
+            if (paired.length === 0) {
+              ingestWarning = 'No embeddings returned; skipped vector storage';
+            } else {
+              const records = paired.map(p => ({
+                id: p.id,
+                values: p.embedding,
+                metadata: p.metadata
+              }));
 
+              await index.upsert(records);
+
+              console.log("Successfully saved text chunks to Pinecone.");
+
+              ingested = true;
+            }
+          }
+        } catch (pineconeErr) {
+          ingestWarning = pineconeErr.message;
         }
 
       }
@@ -228,15 +288,16 @@ export default (chroma) => async (req, res) => {
 
 
 
-    return res.status(200).json({ success: true, message: `Successfully ingested and saved ${file.originalname}` });
 
-  } catch (error) {
+    return res.status(200).json({ success: true, message: `Processed ${file.originalname}`, fileURL, ingested, ingestWarning, warnings });
 
-    console.error("Upload Error:", error);
+  } catch (error) {
 
-    return res.status(500).json({ error: "Failed to ingest document" });
+    console.error("Upload Error:", error);
 
-  }
+    return res.status(500).json({ error: "Failed to ingest document", details: error.message });
+
+  }
 
   } else {
 

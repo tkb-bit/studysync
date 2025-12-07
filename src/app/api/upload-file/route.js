@@ -37,21 +37,8 @@ export async function POST(request) {
       return NextResponse.json(result, { status: response.status });
     }
 
-    // Auto-ingest after successful upload
-    const ingestResponse = await fetch(`${backendUrl}/ingest`, {
-      method: 'POST',
-      body: backendFormData,
-    });
-
-    const ingestResult = await ingestResponse.json();
-
-    if (!ingestResponse.ok) {
-      console.warn('Ingest failed after upload:', ingestResult);
-      // Still return upload success, but log warning
-    }
-
-    // Return upload result, ingest is background
-    return NextResponse.json({ ...result, ingested: ingestResponse.ok });
+    // Return upload result; ingestion is handled inside the backend upload route
+    return NextResponse.json({ ...result });
   } catch (error) {
     console.error('Upload proxy error:', error);
     return NextResponse.json({ error: 'Upload failed - backend connection issue' }, { status: 500 });

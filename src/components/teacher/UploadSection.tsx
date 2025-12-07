@@ -68,7 +68,7 @@ export function UploadSection() {
           throw new Error(data.error || 'Upload failed');
         }
         if (data.ingested === false) {
-          throw new Error('Upload succeeded but processing for chatbot search failed');
+          console.warn('Upload succeeded but ingest skipped:', data.ingestWarning || 'Chroma unavailable');
         }
         setUploadedFiles(prev => 
           prev.map(f => f.id === fileInfo.id ? { ...f, status: 'success' } : f)
